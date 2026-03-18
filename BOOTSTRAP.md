@@ -34,15 +34,20 @@ git submodule update --init --recursive
 
 別のインフラを使う場合は `service.config.yaml` の `infra.url` を変更してから上記コマンドのURLを差し替える。
 
-### 3. app/pyproject.tomlのservice_nameを更新
+### 3. infraのデータパスを確認する
+
+`infra/` のマウント定義を読み、コンテナの `/data` がホストのどこにマウントされるかを確認する。
+`app/src/pipeline.py` の `ArtifactStore` の `root_dir` をそのパスに合わせること。
+
+### 4. app/pyproject.tomlのservice_nameを更新
 
 `app/pyproject.toml` の `name = "service-name"` を実際のサービス名に変更。
 
-### 4. app/src/pipeline.py のpipeline名を更新
+### 5. app/src/pipeline.py のpipeline名を更新
 
 `pipeline="service-name"` を実際のサービス名に変更。
 
-### 5. このファイルを削除
+### 6. このファイルを削除
 
 ```bash
 git rm BOOTSTRAP.md
