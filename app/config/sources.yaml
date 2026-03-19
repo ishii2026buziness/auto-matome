@@ -1,0 +1,58 @@
+sources:
+  - name: hn
+    enabled: true
+    params:
+      limit: 50
+
+  - name: indieweb
+    enabled: true
+    params:
+      limit_per_feed: 8
+
+  - name: reddit
+    enabled: true
+    params:
+      subreddits:
+        - programming
+        - technology
+        - artificial
+        - MachineLearning
+        - webdev
+        - LocalLLaMA
+        - singularity
+        - opensource
+        - datascience
+      limit_per_sub: 15
+      max_comments: 5
+
+  - name: rss
+    enabled: true
+    params:
+      limit_per_feed: 8
+      feeds:
+        - https://lobste.rs/rss                              # Lobsters (quality tech discussion)
+        - https://feeds.arstechnica.com/arstechnica/index   # Ars Technica
+        - https://www.theverge.com/rss/index.xml            # The Verge
+        - https://tldr.tech/api/rss/tech                    # TLDR Tech
+        - https://openai.com/news/rss.xml                    # OpenAI News
+        - https://blog.google/technology/ai/rss/             # Google AI Blog
+        - https://huggingface.co/blog/feed.xml               # Hugging Face Blog
+        - https://blog.langchain.com/rss/                    # LangChain Blog
+        - https://simonwillison.net/atom/everything/         # Simon Willison
+        - https://techcrunch.com/feed/                       # TechCrunch
+        - https://blog.cloudflare.com/rss/                   # Cloudflare Blog
+        - https://github.blog/feed/                          # GitHub Blog
+        - https://spectrum.ieee.org/feeds/topic/artificial-intelligence.rss  # IEEE Spectrum AI
+        - https://www.theregister.com/headlines.atom                         # The Register
+        - https://feeds.feedburner.com/oreilly/radar/atom                    # O'Reilly Radar
+        - https://www.marktechpost.com/feed/                                 # MarkTechPost
+        - https://www.redhat.com/en/rss/blog.xml                             # Red Hat Blog
+
+  # 別パラメータで同じフェッチャーを複数インスタンス起動できる
+  # - name: reddit
+  #   enabled: false
+  #   params:
+  #     subreddits:
+  #       - jobsearchhacks
+  #       - cscareerquestions
+  #     limit_per_sub: 5

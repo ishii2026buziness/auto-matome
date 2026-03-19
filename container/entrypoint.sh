@@ -3,7 +3,7 @@
 # サービス固有の処理（auth設定等）はこのファイルの上部に追加する
 set -euo pipefail
 
-SERVICE_NAME={{SERVICE_NAME}}
+SERVICE_NAME=auto-matome
 PACKAGE_DIR=/app
 LOG_FILE="/data/pipeline-$(date +%Y%m%d).log"
 

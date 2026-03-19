@@ -1,0 +1,5 @@
+service_name: auto-matome
+artifact_root: .artifacts
+infra:
+  url: https://github.com/ishii2025buziness/k12-network-notes
+  type: k12
