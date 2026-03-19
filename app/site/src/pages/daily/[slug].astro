@@ -1,0 +1,54 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("daily");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<BaseLayout title={entry.data.title} description={entry.data.description}>
+  <article class="article-shell">
+    <a class="back-link" href="/">← Archive</a>
+    <p class="article-date">{entry.data.date.toISOString().slice(0, 10)}</p>
+    <h1>{entry.data.title}</h1>
+    <p class="article-source">Sources: {entry.data.source}</p>
+    <div class="article-body" id="article-body">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  // 1. Transform "N 名無しさん text" paragraphs into styled res blocks
+  document.querySelectorAll('#article-body p').forEach((p) => {
+    const m = p.innerHTML.match(/^(\d+)\s+(名無しさん)([\s\S]*)$/);
+    if (!m) return;
+    const [, num, name, rest] = m;
+    p.classList.add('res');
+    p.innerHTML =
+      `<span class="res-meta"><span class="res-num">${num}</span> ${name}</span>` +
+      `<span class="res-body">${rest.replace(/^\s*<br\s*\/?>\s*/i, '').replace(/^\s+/, '')}</span>`;
+  });
+
+  // 2. Lightbox for article images
+  const body = document.getElementById('article-body');
+  body?.querySelectorAll('img').forEach((img) => {
+    img.addEventListener('click', () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'lb-overlay';
+      const big = document.createElement('img');
+      big.src = img.src;
+      overlay.appendChild(big);
+      overlay.addEventListener('click', () => overlay.remove());
+      document.body.appendChild(overlay);
+    });
+  });
+</script>

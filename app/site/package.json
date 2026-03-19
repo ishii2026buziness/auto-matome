@@ -1,0 +1,18 @@
+{
+  "name": "auto-matome-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "wrangler pages deploy dist --project-name ${CLOUDFLARE_PAGES_PROJECT_NAME:-auto-matome} --branch ${CLOUDFLARE_PAGES_BRANCH:-main}"
+  },
+  "dependencies": {
+    "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "auto-matome-workspace",
+  "private": true,
+  "scripts": {
+    "site:sync": "node site/scripts/sync-output.mjs",
+    "site:build": "npm run site:sync && npm --prefix site run build",
+    "site:dev": "npm run site:sync && npm --prefix site run dev",
+    "site:deploy": "npm run site:build && npm --prefix site run deploy"
+  }
+}
