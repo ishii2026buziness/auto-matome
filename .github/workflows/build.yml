@@ -43,8 +43,8 @@ jobs:
           file: container/Containerfile
           push: true
           tags: |
-            ghcr.io/ishii2025buziness/auto-matome:latest
-            ghcr.io/ishii2025buziness/auto-matome:${{ github.run_id }}
+            ghcr.io/ishii2026buziness/auto-matome:latest
+            ghcr.io/ishii2026buziness/auto-matome:${{ github.run_id }}
 
   deploy:
     needs: build
