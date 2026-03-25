@@ -1,14 +1,6 @@
 # AGENTS.md — Auto Matome
 
-## デプロイ方針（ADR-0004）
-
-このサービスは **uv2nix + NixOS container（systemd-nspawn）** でK12にデプロイされる。
-
-- Podman/Containerfile/GHCRへのpushは**不要**（廃止済み）
-- K12へのデプロイ設定は `k12-network-notes` リポジトリの `nixos/modules/auto-matome.nix` で管理
-- このサービスは `claude -p` を呼ぶため NixOS container で隔離される（プロンプトインジェクション対策）
-- K12上での役割: コンテンツ生成のみ。site build/deploy は GitHub Actions (ubuntu-latest) が担当
-- 生成コンテンツは `content-data` ブランチに push → GitHub Actions がトリガーされ Cloudflare にデプロイ
+デプロイ方針: [docs/deployment.md](docs/deployment.md) 参照
 
 This repository is an autonomous Japanese-language curation media that collects trending tech and social news from Hacker News and IndieWeb RSS feeds, converts them into 2ch-style matome articles, and publishes daily to an Astro SSG site on Cloudflare Pages.
 
