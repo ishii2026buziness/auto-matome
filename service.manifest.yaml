@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://github.com/ishii2025buziness/k12-network-notes/raw/main/schemas/service-manifest.schema.json
+
+name: auto-matome
+description: Daily news digest generation — multi-source ingest, dedup, AI-assisted matome, site push
+
+process:
+  entrypoint: python -m cli run
+  workdir: app
+
+input:
+  - type: rss
+    name: news_feeds
+    description: Multiple RSS/Atom sources (tech, anime, general news)
+  - type: external_api
+    name: twitter
+    description: Twitter trending topics and tweets
+  - type: claude_api
+    name: claude
+    description: Matome article generation via Claude API (claude-gateway)
+
+output:
+  - name: matome_articles
+    path: data/
+    format: mixed
+    description: Generated matome articles pushed to content repository
+  - name: logs
+    path: data/logs/
+    format: mixed
+    description: Pipeline logs and run status
+
+successCriteria:
+  - exitCode: 0
+  - freshArtifact:
+      path: data/last_run_status
+      maxAgeHours: 25
