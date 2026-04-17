@@ -161,7 +161,7 @@ def push_content_to_branch(output_path: Path) -> None:
         out_dir = Path(tmpdir) / "output"
         out_dir.mkdir(exist_ok=True)
         shutil.copy2(output_path, out_dir / output_path.name)
-        subprocess.run(["git", "add", str(out_dir / output_path.name)], cwd=tmpdir, env=env, check=True)
+        subprocess.run(["git", "add", "-f", str(out_dir / output_path.name)], cwd=tmpdir, env=env, check=True)
 
         commit_result = subprocess.run(
             ["git", "commit", "-m", f"content: add {output_path.name}"],
