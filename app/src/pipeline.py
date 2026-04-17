@@ -104,13 +104,15 @@ def push_content_to_branch(output_path: Path) -> None:
     """生成コンテンツ（output/YYYY-MM-DD.md）を content-data ブランチに git push する。
 
     必要な環境変数:
-      - GITHUB_TOKEN : git push に使用するPersonal Access Token（またはGitHubActionsトークン）
-                       例: https://x-access-token:${GITHUB_TOKEN}@github.com/...
-      - GIT_USER_EMAIL : コミット時のメールアドレス（例: bot@example.com）
-      - GIT_USER_NAME  : コミット時のユーザー名（例: auto-matome-bot）
-    SSH鍵による認証の場合は GITHUB_TOKEN 不要だが、コンテナ内に SSH_PRIVATE_KEY を
-    マウントまたは環境変数で渡す必要がある。
+      - GITHUB_TOKEN : git push に使用するPersonal Access Token
+      - GIT_USER_EMAIL / GIT_USER_NAME : コミット用（省略可）
+
+    tmpdir に bare clone を作って操作する。ROOT が output/ シンボリックリンクを
+    含むため、同ディレクトリで branch checkout すると "untracked files would be
+    overwritten" エラーになるのを回避するため。
     """
+    import shutil, tempfile
+
     if os.environ.get("AUTO_MATOME_PUSH_CONTENT") != "1":
         log.info("content push skipped (AUTO_MATOME_PUSH_CONTENT != 1)")
         return
@@ -123,98 +125,56 @@ def push_content_to_branch(output_path: Path) -> None:
     git_name = os.environ.get("GIT_USER_NAME", "auto-matome-bot")
     github_token = os.environ.get("GITHUB_TOKEN", "")
 
-    log.info("pushing content to content-data branch", extra={"output_path": str(output_path)})
+    # リモートURLを組み立て（GITHUB_TOKEN があれば認証URL）
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    origin_url = result.stdout.strip()
+    if github_token and origin_url.startswith("https://github.com/"):
+        repo_path = origin_url.removeprefix("https://github.com/")
+        push_url = f"https://x-access-token:{github_token}@github.com/{repo_path}"
+    else:
+        push_url = origin_url
 
-    # リモートURLをGITHUB_TOKENを使うURLに書き換える（token認証の場合）
-    if github_token:
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        origin_url = result.stdout.strip()
-        if origin_url.startswith("https://github.com/"):
-            repo_path = origin_url.removeprefix("https://github.com/")
-            authed_url = f"https://x-access-token:{github_token}@github.com/{repo_path}"
-            subprocess.run(
-                ["git", "remote", "set-url", "origin", authed_url],
-                cwd=ROOT,
-                check=True,
-            )
+    log.info("pushing content to content-data branch", extra={"output_path": str(output_path)})
 
     env = {**os.environ, "GIT_AUTHOR_EMAIL": git_email, "GIT_AUTHOR_NAME": git_name,
            "GIT_COMMITTER_EMAIL": git_email, "GIT_COMMITTER_NAME": git_name}
 
-    # content-data ブランチを取得（なければ孤立ブランチとして作成）
-    subprocess.run(
-        ["git", "fetch", "origin", "content-data:content-data"],
-        cwd=ROOT,
-        capture_output=True,
-    )
-    current_branch_result = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    current_branch = current_branch_result.stdout.strip()
-
+    tmpdir = tempfile.mkdtemp(prefix="auto-matome-push-")
     try:
-        # content-data ブランチに切り替え（なければ作成）
-        checkout_result = subprocess.run(
-            ["git", "checkout", "content-data"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        if checkout_result.returncode != 0:
-            subprocess.run(
-                ["git", "checkout", "--orphan", "content-data"],
-                cwd=ROOT,
-                env=env,
-                check=True,
-            )
-            # 余分なファイルをステージから除去
-            subprocess.run(
-                ["git", "rm", "-rf", "--cached", "."],
-                cwd=ROOT,
-                capture_output=True,
-            )
+        # tmpdir で新しいリポジトリを作成し、content-data を取得
+        subprocess.run(["git", "init"], cwd=tmpdir, check=True, capture_output=True)
+        subprocess.run(["git", "remote", "add", "origin", push_url], cwd=tmpdir, check=True, capture_output=True)
 
-        # output ディレクトリを add
-        subprocess.run(
-            ["git", "add", str(output_path)],
-            cwd=ROOT,
-            env=env,
-            check=True,
+        fetch_result = subprocess.run(
+            ["git", "fetch", "origin", "content-data:content-data"],
+            cwd=tmpdir, capture_output=True,
         )
+        if fetch_result.returncode == 0:
+            subprocess.run(["git", "checkout", "content-data"], cwd=tmpdir, check=True, capture_output=True)
+        else:
+            subprocess.run(["git", "checkout", "--orphan", "content-data"], cwd=tmpdir, env=env, check=True, capture_output=True)
+
+        # output ファイルをコピーして add
+        out_dir = Path(tmpdir) / "output"
+        out_dir.mkdir(exist_ok=True)
+        shutil.copy2(output_path, out_dir / output_path.name)
+        subprocess.run(["git", "add", str(out_dir / output_path.name)], cwd=tmpdir, env=env, check=True)
 
         commit_result = subprocess.run(
             ["git", "commit", "-m", f"content: add {output_path.name}"],
-            cwd=ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
+            cwd=tmpdir, env=env, capture_output=True, text=True,
         )
         if commit_result.returncode != 0 and "nothing to commit" in commit_result.stdout + commit_result.stderr:
             log.info("content push: nothing new to commit")
         else:
             commit_result.check_returncode()
-            subprocess.run(
-                ["git", "push", "origin", "content-data"],
-                cwd=ROOT,
-                env=env,
-                check=True,
-            )
+            subprocess.run(["git", "push", "origin", "content-data"], cwd=tmpdir, env=env, check=True)
             log.info("content pushed to content-data branch")
     finally:
-        # 元のブランチに戻す
-        subprocess.run(
-            ["git", "checkout", current_branch],
-            cwd=ROOT,
-            capture_output=True,
-        )
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def _duration_ms(start: float) -> int:
