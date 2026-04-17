@@ -5,9 +5,21 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import sys
 from datetime import date
+from pathlib import Path
+
+# pipeline.py と同様の sys.path 操作:
+# /app/src/common/ (ローカル) が common.contracts をシャドウするのを防ぐ
+_SRC = Path(__file__).resolve().parent
+_COMMON_SRC = _SRC.parent.parent / "common" / "src"
+if str(_SRC) in sys.path:
+    sys.path.remove(str(_SRC))
+sys.path.insert(0, str(_COMMON_SRC))
 
 from common.contracts import JobStatus
+
+sys.path.insert(0, str(_SRC))
 
 from pipeline import ROOT, run_pipeline
 
