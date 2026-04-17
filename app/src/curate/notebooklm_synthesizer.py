@@ -62,8 +62,12 @@ _log = _get_logger("auto_matome.curate.notebooklm")
 
 
 def _run(cmd: list[str]) -> tuple[int, str, str]:
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    return r.returncode, r.stdout.strip(), r.stderr.strip()
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        return r.returncode, r.stdout.strip(), r.stderr.strip()
+    except FileNotFoundError as exc:
+        # notebooklm CLI not installed — caller treats rc!=0 as failure and falls back
+        return 1, "", str(exc)
 
 
 async def _run_async(cmd: list[str]) -> tuple[int, str, str]:
